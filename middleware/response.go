@@ -4,13 +4,13 @@ import (
 	"net/http"
 	"time"
 
-	apimodels "github.com/akrck02/valhalla-core-sdk/models/api"
+	"github.com/akrck02/godot-api-template/models"
 )
 
 type EmptyResponse struct {
 }
 
-func Response(context *apimodels.ApiContext) *apimodels.Error {
+func Response(context *models.ApiContext) *models.Error {
 
 	// calculate the time of the request
 	start := time.Now()
@@ -20,7 +20,8 @@ func Response(context *apimodels.ApiContext) *apimodels.Error {
 
 	// calculate the time of the response
 	end := time.Now()
-	elapsed := end.Sub(start)
+	//elapsed :
+	_ = end.Sub(start)
 
 	// if something went wrong, return error
 	if nil != responseError {
@@ -29,7 +30,7 @@ func Response(context *apimodels.ApiContext) *apimodels.Error {
 
 	// if response is nil, return {}
 	if nil == result {
-		context.Response = apimodels.Response{
+		context.Response = models.Response{
 			Code:     http.StatusNoContent,
 			Response: EmptyResponse{},
 		}
@@ -38,8 +39,8 @@ func Response(context *apimodels.ApiContext) *apimodels.Error {
 	}
 
 	// send response
-	result.ResponseTime = elapsed.Nanoseconds()
-	context.Response = *result
+	//result.ResponseTime = elapsed.Nanoseconds()
+	//context.Response = *result
 	return nil
 
 }

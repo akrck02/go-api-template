@@ -1,5 +1,7 @@
 package middleware
 
-import apimodels "github.com/akrck02/valhalla-core-sdk/models/api"
+import (
+	"github.com/akrck02/godot-api-template/models"
+)
 
-type Middleware func(context *apimodels.ApiContext) *apimodels.Error
+type Middleware func(context *models.ApiContext) *models.Error

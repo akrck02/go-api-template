@@ -2,16 +2,12 @@ package apicommon
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
-	"github.com/akrck02/valhalla-api-common/configuration"
-	"github.com/akrck02/valhalla-api-common/middleware"
-	"github.com/akrck02/valhalla-api-common/services"
-	"github.com/akrck02/valhalla-core-dal/database"
-
-	sdkhttp "github.com/akrck02/valhalla-core-sdk/http"
-	"github.com/akrck02/valhalla-core-sdk/log"
-	apimodels "github.com/akrck02/valhalla-core-sdk/models/api"
+	"github.com/akrck02/godot-api-template/configuration"
+	"github.com/akrck02/godot-api-template/middleware"
+	"github.com/akrck02/godot-api-template/models"
 )
 
 const API_PATH = "/api/"
@@ -22,20 +18,14 @@ const CONTENT_TYPE_HEADER = "Content-Type"
 // the order of the middlewares is important, it will be applied in the order they are listed
 var ApiMiddlewares = []middleware.Middleware{
 	middleware.Security,
-	middleware.Database,
 	middleware.Trazability,
 	middleware.Checks,
 }
 
-func Start(configuration configuration.APIConfiguration, endpoints []apimodels.Endpoint) {
-
-	// set debug or release mode
-	if configuration.IsDevelopment() {
-		log.Logger.WithDebug()
-	}
+func Start(configuration configuration.APIConfiguration, endpoints []models.Endpoint) {
 
 	// show log app title and start router
-	log.ShowLogAppTitle("Valhalla " + configuration.ApiName + " API")
+	log.Println(configuration.ApiName)
 
 	// CORS configuration
 	// http.HandleFunc("OPTIONS", func(w http.ResponseWriter, r *http.Request) {
@@ -46,59 +36,46 @@ func Start(configuration configuration.APIConfiguration, endpoints []apimodels.E
 	// 	w.WriteHeader(http.StatusNoContent)
 	// })
 
-	// register middlewares
-	ApiMiddlewares = append(ApiMiddlewares, middleware.Database)
-
 	// Add API path to endpoints
-	newEndpoints := []apimodels.Endpoint{}
+	newEndpoints := []models.Endpoint{}
 	for _, endpoint := range endpoints {
 		endpoint.Path = API_PATH + configuration.ApiName + "/" + configuration.Version + "/" + endpoint.Path
 		newEndpoints = append(newEndpoints, endpoint)
 	}
 
-	// Add core info endpoint
-	newEndpoints = append(newEndpoints, apimodels.Endpoint{
-		Path:     API_PATH + configuration.ApiName + "/" + configuration.Version,
-		Method:   sdkhttp.HTTP_METHOD_GET,
-		Listener: services.ValhallaCoreInfoHttp,
-		Checks:   services.EmptyCheck,
-		Secured:  true,
-		Database: false,
-	})
-
 	// Register endpoints
 	registerEndpoints(newEndpoints)
 
 	// Start listening HTTP requests
-	log.FormattedInfo("API started on http://${0}:${1}${2}", configuration.Ip, configuration.Port, API_PATH)
+	log.Printf("API started on http://%s:%s%s", configuration.Ip, configuration.Port, API_PATH)
 	state := http.ListenAndServe(configuration.Ip+":"+configuration.Port, nil)
-	log.Error(state.Error())
+	log.Print(state.Error())
 
 }
 
-func registerEndpoints(endpoints []apimodels.Endpoint) {
+func registerEndpoints(endpoints []models.Endpoint) {
 
 	for _, endpoint := range endpoints {
 
-		log.FormattedInfo("Endpoint ${0} registered.", endpoint.Path)
+		log.Printf("Endpoint %s registered. \n", endpoint.Path)
 
 		switch endpoint.Method {
-		case sdkhttp.HTTP_METHOD_GET:
+		case models.GetMethod:
 			endpoint.Path = "GET " + endpoint.Path
-		case sdkhttp.HTTP_METHOD_POST:
+		case models.PostMethod:
 			endpoint.Path = "POST " + endpoint.Path
-		case sdkhttp.HTTP_METHOD_PUT:
+		case models.PutMethod:
 			endpoint.Path = "PUT " + endpoint.Path
-		case sdkhttp.HTTP_METHOD_DELETE:
+		case models.DeleteMethod:
 			endpoint.Path = "DELETE " + endpoint.Path
-		case sdkhttp.HTTP_METHOD_PATCH:
+		case models.PatchMethod:
 			endpoint.Path = "PATCH " + endpoint.Path
 		}
 
 		http.HandleFunc(endpoint.Path, func(w http.ResponseWriter, r *http.Request) {
 
 			// log the request
-			log.FormattedInfo("${0}", endpoint.Path)
+			log.Printf("%s", endpoint.Path)
 
 			// enable CORS
 			w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -107,8 +84,8 @@ func registerEndpoints(endpoints []apimodels.Endpoint) {
 			w.Header().Set("Access-Control-Max-Age", "3600")
 
 			// create basic api context
-			context := &apimodels.ApiContext{
-				Trazability: apimodels.Trazability{
+			context := &models.ApiContext{
+				Trazability: models.Trazability{
 					Endpoint: endpoint,
 				},
 			}
@@ -137,16 +114,11 @@ func registerEndpoints(endpoints []apimodels.Endpoint) {
 			// Send response
 			jsonResponse(w, context.Response.Code, context.Response)
 
-			// if a database connection was created, close it
-			if nil != context.Database.Client {
-				defer context.Database.Client.Disconnect(database.GetDefaultContext())
-			}
 		})
-
 	}
 }
 
-func applyMiddleware(context *apimodels.ApiContext) *apimodels.Error {
+func applyMiddleware(context *models.ApiContext) *models.Error {
 
 	for _, middleware := range ApiMiddlewares {
 		err := middleware(context)

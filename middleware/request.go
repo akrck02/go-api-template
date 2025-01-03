@@ -3,31 +3,30 @@ package middleware
 import (
 	"net/http"
 
-	apimodels "github.com/akrck02/valhalla-core-sdk/models/api"
-	"github.com/akrck02/valhalla-core-sdk/valerror"
+	"github.com/akrck02/godot-api-template/models"
 )
 
 const USER_AGENT_HEADER = "User-Agent"
 
-func Request(r *http.Request, context *apimodels.ApiContext) *apimodels.Error {
+func Request(r *http.Request, context *models.ApiContext) *models.Error {
 
 	parserError := r.ParseForm()
 
 	if parserError != nil {
-		return &apimodels.Error{
+		return &models.Error{
 			Status:  http.StatusBadRequest,
-			Error:   valerror.INVALID_REQUEST,
+			Error:   0,
 			Message: parserError.Error(),
 		}
 	}
 
-	context.Request = apimodels.Request{
+	context.Request = models.Request{
 		Authorization: r.Header.Get(AUTHORITATION_HEADER),
-		IP:            r.Host,
+		Ip:            r.Host,
 		UserAgent:     r.Header.Get(USER_AGENT_HEADER),
-		Headers:       r.Header,
-		Body:          r.Body,
-		Params:        r.Form,
+		//Headers:       r.Header,
+		Body: r.Body,
+		//Params:        r.Form,
 	}
 
 	// If files are present, add them to the context

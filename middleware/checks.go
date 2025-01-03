@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	apimodels "github.com/akrck02/valhalla-core-sdk/models/api"
+	"github.com/akrck02/godot-api-template/models"
 )
 
-func Checks(context *apimodels.ApiContext) *apimodels.Error {
+func Checks(context *models.ApiContext) *models.Error {
 
 	checkError := context.Trazability.Endpoint.Checks(context)
 	if checkError != nil {

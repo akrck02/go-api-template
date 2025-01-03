@@ -1,9 +1,9 @@
 package configuration
 
 import (
+	"log"
 	"os"
 
-	"github.com/akrck02/valhalla-core-sdk/log"
 	"github.com/joho/godotenv"
 )
 
@@ -34,14 +34,13 @@ func LoadConfiguration(path string) APIConfiguration {
 }
 
 func checkCompulsoryVariables(Configuration APIConfiguration) {
-	log.Jump()
-	log.Line()
-	log.Info("Configuration variables")
-	log.Line()
-	log.Info("IP: " + Configuration.Ip)
-	log.Info("PORT: " + Configuration.Port)
-	log.Info("VERSION: " + Configuration.Version)
-	log.Info("API_NAME: " + Configuration.ApiName)
+	log.Println()
+	log.Println("Configuration variables")
+	log.Println()
+	log.Printf("IP: %s\n", Configuration.Ip)
+	log.Printf("PORT: %s\n", Configuration.Port)
+	log.Printf("VERSION: %s\n", Configuration.Version)
+	log.Printf("API_NAME: %s\n", Configuration.ApiName)
 }
 
 func (APIConfiguration) IsDevelopment() bool {

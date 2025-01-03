@@ -1,2 +1,2 @@
-# valhalla-api-common
-Common resources for valhalla APIs
+# Go api template
+Basic template for go apis.

@@ -20,8 +20,7 @@ func Response(context *models.ApiContext) *models.Error {
 
 	// calculate the time of the response
 	end := time.Now()
-	//elapsed :
-	_ = end.Sub(start)
+	elapsed := end.Sub(start)
 
 	// if something went wrong, return error
 	if nil != responseError {
@@ -39,8 +38,8 @@ func Response(context *models.ApiContext) *models.Error {
 	}
 
 	// send response
-	//result.ResponseTime = elapsed.Nanoseconds()
-	//context.Response = *result
+	result.ResponseTime = elapsed.Nanoseconds()
+	context.Response = *result
 	return nil
 
 }

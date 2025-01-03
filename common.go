@@ -10,7 +10,7 @@ import (
 	"github.com/akrck02/godot-api-template/models"
 )
 
-const API_PATH = "/api/"
+const API_PATH = "/"
 const CONTENT_TYPE_HEADER = "Content-Type"
 
 // ApiMiddlewares is a list of middleware functions that will be applied to all API requests
@@ -71,6 +71,8 @@ func registerEndpoints(endpoints []models.Endpoint) {
 		case models.PatchMethod:
 			endpoint.Path = "PATCH " + endpoint.Path
 		}
+
+		println(endpoint.Path)
 
 		http.HandleFunc(endpoint.Path, func(w http.ResponseWriter, r *http.Request) {
 

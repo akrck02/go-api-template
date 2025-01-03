@@ -15,4 +15,4 @@ type Endpoint struct {
 }
 
 type EndpointCheck func(context *ApiContext) *Error
-type EndpointListener func(context *ApiContext) (*interface{}, *Error)
+type EndpointListener func(context *ApiContext) (*Response, *Error)

@@ -1,13 +1,15 @@
 package apicommon
 
 import (
-	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/akrck02/godot-api-template/configuration"
 	"github.com/akrck02/godot-api-template/middleware"
 	"github.com/akrck02/godot-api-template/models"
+	"github.com/akrck02/godot-api-template/services"
 )
 
 const API_PATH = "/"
@@ -57,33 +59,34 @@ func registerEndpoints(endpoints []models.Endpoint) {
 
 	for _, endpoint := range endpoints {
 
-		log.Printf("Endpoint %s registered. \n", endpoint.Path)
-
 		switch endpoint.Method {
 		case models.GetMethod:
-			endpoint.Path = "GET " + endpoint.Path
+			endpoint.Path = fmt.Sprintf("GET %s", endpoint.Path)
 		case models.PostMethod:
-			endpoint.Path = "POST " + endpoint.Path
+			endpoint.Path = fmt.Sprintf("POST %s", endpoint.Path)
 		case models.PutMethod:
-			endpoint.Path = "PUT " + endpoint.Path
+			endpoint.Path = fmt.Sprintf("PUT %s", endpoint.Path)
 		case models.DeleteMethod:
-			endpoint.Path = "DELETE " + endpoint.Path
+			endpoint.Path = fmt.Sprintf("DELETE %s", endpoint.Path)
 		case models.PatchMethod:
-			endpoint.Path = "PATCH " + endpoint.Path
+			endpoint.Path = fmt.Sprintf("PATCH %s", endpoint.Path)
 		}
 
-		println(endpoint.Path)
+		log.Printf("Endpoint %s registered. \n", endpoint.Path)
 
-		http.HandleFunc(endpoint.Path, func(w http.ResponseWriter, r *http.Request) {
+		// set defaults
+		setEndpointDefaults(&endpoint)
+
+		http.HandleFunc(endpoint.Path, func(writer http.ResponseWriter, reader *http.Request) {
 
 			// log the request
 			log.Printf("%s", endpoint.Path)
 
 			// enable CORS
-			w.Header().Set("Access-Control-Allow-Origin", "*")
-			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
-			w.Header().Set("Access-Control-Max-Age", "3600")
+			writer.Header().Set("Access-Control-Allow-Origin", os.Getenv("CORS_ORIGIN"))
+			writer.Header().Set("Access-Control-Allow-Methods", os.Getenv("CORS_METHODS"))
+			writer.Header().Set("Access-Control-Allow-Headers", os.Getenv("CORS_HEADERS"))
+			writer.Header().Set("Access-Control-Max-Age", os.Getenv("CORS_MAX_AGE"))
 
 			// create basic api context
 			context := &models.ApiContext{
@@ -93,31 +96,43 @@ func registerEndpoints(endpoints []models.Endpoint) {
 			}
 
 			// Get request data
-			err := middleware.Request(r, context)
+			err := middleware.Request(reader, context)
 			if nil != err {
-				jsonResponse(w, err.Status, err)
+				middleware.SendResponse(writer, err.Status, err, models.MimeApplicationJson)
 				return
 			}
 
 			// Apply middleware to the request
 			err = applyMiddleware(context)
 			if nil != err {
-				jsonResponse(w, err.Status, err)
+				middleware.SendResponse(writer, err.Status, err, models.MimeApplicationJson)
 				return
 			}
 
 			// Execute the endpoint
-			err = middleware.Response(context)
-			if nil != err {
-				jsonResponse(w, err.Status, err)
-				return
-			}
-
-			// Send response
-			jsonResponse(w, context.Response.Code, context.Response)
-
+			middleware.Response(context, writer)
 		})
 	}
+}
+
+func setEndpointDefaults(endpoint *models.Endpoint) {
+
+	if nil == endpoint.Checks {
+		endpoint.Checks = services.EmptyCheck
+	}
+
+	if nil == endpoint.Listener {
+		endpoint.Listener = services.NotImplemented
+	}
+
+	if endpoint.RequestMimeType == "" {
+		endpoint.RequestMimeType = models.MimeApplicationJson
+	}
+
+	if endpoint.ResponseMimeType == "" {
+		endpoint.ResponseMimeType = models.MimeApplicationJson
+	}
+
 }
 
 func applyMiddleware(context *models.ApiContext) *models.Error {
@@ -130,12 +145,4 @@ func applyMiddleware(context *models.ApiContext) *models.Error {
 	}
 
 	return nil
-
-}
-
-func jsonResponse(w http.ResponseWriter, status int, response interface{}) {
-	w.Header().Set(CONTENT_TYPE_HEADER, "application/json")
-	w.WriteHeader(status)
-
-	json.NewEncoder(w).Encode(response)
 }

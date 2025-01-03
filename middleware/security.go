@@ -4,7 +4,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/akrck02/godot-api-template/constants"
+	"github.com/akrck02/godot-api-template/errors"
 	"github.com/akrck02/godot-api-template/models"
 )
 
@@ -24,7 +24,7 @@ func Security(context *models.ApiContext) *models.Error {
 	if context.Request.Authorization == "" {
 		return &models.Error{
 			Status:  http.StatusForbidden,
-			Error:   constants.InvalidToken,
+			Error:   errors.InvalidToken,
 			Message: "Missing token",
 		}
 	}
@@ -33,7 +33,7 @@ func Security(context *models.ApiContext) *models.Error {
 	if !tokenIsValid(context.Request.Authorization) {
 		return &models.Error{
 			Status:  http.StatusForbidden,
-			Error:   constants.InvalidToken,
+			Error:   errors.InvalidToken,
 			Message: "Invalid token",
 		}
 	}
